@@ -1,79 +1,145 @@
+#Tiktoken needs to be installed before usage (pip install Tiktoken)
 import tiktoken
 
 
-# Function to format function definitions
-def format_function_definitions(functions) -> str:
+def format_function_definitions(functions: list[dict]) -> str:
+    """
+    Generates TypeScript function type definitions.
+
+    Args:
+    - functions (list[dict]): List of dictionaries representing function definitions.
+
+    Returns:
+    - str: TypeScript function type definitions.
+    """
     lines = ["namespace functions {"]
-    # lines = ["namespace functions {", ""]
-    for f in functions:
-        if f.get("description"):
-            lines.append(f"// {f['description']}")
-        if f["parameters"].get("properties"):
-            temp_s = f"type {f['name']} = (_: " + "{{"
-            lines.append(temp_s)
-            lines.append(format_object_properties(f["parameters"], 0))
+
+    for func in functions:
+        if func.get("description"):
+            lines.append(f"// {func['description']}")
+
+        if func["parameters"].get("properties"):
+            lines.append(f"type {func['name']} = (_: {{")
+            lines.append(_format_object_properties(func["parameters"], 0))
             lines.append("}) => any;")
         else:
-            lines.append(f"type {f['name']} = () => any;")
+            lines.append(f"type {func['name']} = () => any;")
+
         lines.append("")
+
     lines.append("} // namespace functions")
     return "\n".join(lines)
 
 
-# Helper function to format object properties
-def format_object_properties(parameters, indent: int) -> str:
+def _format_object_properties(parameters: dict, indent: int) -> str:
+    """
+    Formats object properties for TypeScript type definitions.
+
+    Args:
+    - parameters (dict): Dictionary representing object parameters.
+    - indent (int): Number of spaces for indentation.
+
+    Returns:
+    - str: Formatted object properties.
+    """
     lines = []
     for name, param in parameters["properties"].items():
         if param.get("description") and indent < 2:
             lines.append(f"// {param['description']}")
-        if parameters.get("required") and name in parameters["required"]:
-            lines.append(f"{name}: {format_type(param, indent)},")
-        else:
-            lines.append(f"{name}?: {format_type(param, indent)},")
+
+        is_required = parameters.get("required") and name in parameters["required"]
+        lines.append(
+            f"{name}{'?:' if not is_required else ':'} {_format_type(param, indent)},"
+        )
 
     return "\n".join([" " * indent + line for line in lines])
 
 
-# Helper function to format a single property type
-def format_type(param, indent: int) -> str:
-    if param["type"] == "string":
-        if param.get("enum"):
-            return " | ".join([f'"{v}"' for v in param["enum"]])
-        return "string"
-    elif param["type"] == "number":
-        if param.get("enum"):
-            return " | ".join([str(v) for v in param["enum"]])
-        return "number"
-    elif param["type"] == "array":
-        if param.get("items"):
-            return f"{format_type(param['items'], indent)}[]"
-        return "any[]"
-    elif param["type"] == "boolean":
+def _format_type(param: dict, indent: int) -> str:
+    """
+    Formats a single property type for TypeScript type definitions.
+
+    Args:
+    - param (dict): Dictionary representing a parameter.
+    - indent (int): Number of spaces for indentation.
+
+    Returns:
+    - str: Formatted type for the given parameter.
+    """
+    type_ = param["type"]
+    if type_ == "string":
+        return (
+            " | ".join([f'"{v}"' for v in param["enum"]])
+            if param.get("enum")
+            else "string"
+        )
+    elif type_ == "number":
+        return (
+            " | ".join([str(v) for v in param["enum"]])
+            if param.get("enum")
+            else "number"
+        )
+    elif type_ == "array":
+        return (
+            f"{_format_type(param['items'], indent)}[]"
+            if param.get("items")
+            else "any[]"
+        )
+    elif type_ == "boolean":
         return "boolean"
-    elif param["type"] == "null":
+    elif type_ == "null":
         return "null"
-    elif param["type"] == "object":
-        return "{\n" + format_object_properties(param, indent + 2) + "\n}"
+    elif type_ == "object":
+        return "{\n" + _format_object_properties(param, indent + 2) + "\n}"
+    else:
+        raise ValueError(f"Unsupported type: {type_}")
 
 
-def functions_tokens_estimate(functions):
-    promptDefinitions = format_function_definitions(functions)
-    tokens = string_tokens(promptDefinitions)
+def _estimate_function_tokens(functions: list[dict]) -> int:
+    """
+    Estimates token count for a given list of functions.
+
+    Args:
+    - functions (list[dict]): List of dictionaries representing function definitions.
+
+    Returns:
+    - int: Estimated token count.
+    """
+    prompt_definitions = format_function_definitions(functions)
+    tokens = _estimate_string_tokens(prompt_definitions)
     tokens += 9  # Add nine per completion
     return tokens
 
 
-def message_tokens_estimate(message):
+def _estimate_string_tokens(string: str, model: str = "gpt-3.5-turbo-0613") -> int:
     """
-    Estimate the number of tokens for a given message.
+    Estimates token count for a given string based on a specified model.
 
     Args:
-    - message (dict): A dictionary representing a message with potential keys 'role', 'content', 'name', and 'function_call'.
+    - string (str): Input string.
+    - model (str, optional): Model name. Default is "gpt-3.5-turbo-0613".
 
     Returns:
-    - int: An estimate of the number of tokens.
+    - int: Estimated token count.
     """
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        print("Warning: model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+    return len(encoding.encode(string))
 
+
+def _estimate_message_tokens(message: dict) -> int:
+    """
+    Estimates token count for a given message.
+
+    Args:
+    - message (dict): Dictionary representing a message.
+
+    Returns:
+    - int: Estimated token count.
+    """
     components = [
         message.get("role"),
         message.get("content"),
@@ -81,89 +147,59 @@ def message_tokens_estimate(message):
         message.get("function_call", {}).get("name"),
         message.get("function_call", {}).get("arguments"),
     ]
-    # Filter out None values
-    components = [component for component in components if component]
-
-    # Assuming string_tokens is a function that exists and computes tokens for a string
-    tokens = sum([string_tokens(component) for component in components])
+    components = [
+        component for component in components if component
+    ]  # Filter out None values
+    tokens = sum([_estimate_string_tokens(component) for component in components])
 
     tokens += 3  # Add three per message
-
     if message.get("name"):
         tokens += 1
-
     if message.get("role") == "function":
         tokens -= 2
-
     if message.get("function_call"):
         tokens += 3
 
     return tokens
 
 
-def string_tokens(string, model="gpt-3.5-turbo-0613"):
-    if model is None:
-        encoding = tiktoken.get_encoding("cl100k_base")
-    else:
-        try:
-            encoding = tiktoken.encoding_for_model(model)
-        except KeyError:
-            print("Warning: model not found. Using cl100k_base encoding.")
-            encoding = tiktoken.get_encoding("cl100k_base")
-    return len(encoding.encode(string))
-
-
-def prompt_tokens_estimate(messages, functions=None, function_call=None):
+def estimate_prompt_tokens(
+    messages: list[dict], functions: list[dict] = None, function_call=None
+) -> int:
     """
-    Estimate the number of tokens for a given prompt with messages and functions.
+    Estimates token count for a given prompt with messages and functions.
 
     Args:
-    - messages (list[dict]): A list of message dictionaries, where each message has 'role' and 'content' keys.
-    - functions (list[dict], optional): A list of function dictionaries. Default is None.
-    - function_call (str or dict, optional): A string ("none", "auto") or a dictionary with 'name' key. Default is None.
+    - messages (list[dict]): List of dictionaries representing messages.
+    - functions (list[dict], optional): List of dictionaries representing function definitions. Default is None.
+    - function_call (str or dict, optional): Function call specification. Default is None.
 
     Returns:
-    - int: An estimate of the number of tokens.
+    - int: Estimated token count.
     """
-
-    # It appears that if functions are present, the first system message is padded with a trailing newline. This
-    # was inferred by trying lots of combinations of messages and functions and seeing what the token counts were.
     padded_system = False
     tokens = 0
+
     for msg in messages:
-        # If the message is from the system, functions are present, and system hasn't been padded yet
         if msg["role"] == "system" and functions and not padded_system:
-            # Modify the content to add a newline
             modified_message = {"role": msg["role"], "content": msg["content"] + "\n"}
-            tokens += message_tokens_estimate(modified_message)
-            padded_system = True  # Update the padded system flag
+            tokens += _estimate_message_tokens(modified_message)
+            padded_system = True  # Mark system as padded
         else:
-            # If no modifications are required, just estimate the tokens for the original message
-            tokens += message_tokens_estimate(msg)
+            tokens += _estimate_message_tokens(msg)
 
-    # Track if system was padded
-    if functions and any(msg["role"] == "system" for msg in messages):
-        padded_system = True
-
-    # Each completion (vs message) seems to carry a 3-token overhead
-    tokens += 3
-
-    # If there are functions, add the function definitions as they count towards token usage
+    tokens += 3  # Each completion has a 3-token overhead
     if functions:
-        tokens += functions_tokens_estimate(functions)
+        tokens += _estimate_function_tokens(functions)
 
-    # If there's a system message _and_ functions are present, subtract four tokens. I assume this is because
-    # functions typically add a system message, but reuse the first one if it's already there. This offsets
-    # the extra 9 tokens added by the function definitions.
     if functions and any(m["role"] == "system" for m in messages):
-        tokens -= 4
+        tokens -= 4  # Adjust for function definitions
 
-    # If function_call is 'none', add one token.
-    # If it's a FunctionCall object, add 4 + the number of tokens in the function name.
-    # If it's undefined or 'auto', don't add anything.
     if function_call and function_call != "auto":
         tokens += (
-            1 if function_call == "none" else string_tokens(function_call["name"]) + 4
+            1
+            if function_call == "none"
+            else _estimate_string_tokens(function_call["name"]) + 4
         )
 
     return tokens
