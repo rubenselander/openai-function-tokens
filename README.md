@@ -1,5 +1,5 @@
 
-# OpenAI Function Tokens Estimator
+# OpenAI Function Tokens
 
 Predict the exact OpenAI token usage for openai functions!
 
