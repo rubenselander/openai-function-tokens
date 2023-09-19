@@ -3,7 +3,7 @@
 
 Estimate OpenAI token usage for chat completions, including functions, with this Python utility!
 
-This package is based upon `hmarr`'s [openai-chat-tokens](https://github.com/hmarr/openai-chat-tokens). As of right now (September 2023) there is no official documentation from openai on how to accurately count the token usage of functions before creating a chat completion. This package solves that! Use it to get a very precise estimation of the token count for chat completions and better manage your OpenAI API usage.
+This package is based upon `hmarr`'s [openai-chat-tokens](https://github.com/hmarr/openai-chat-tokens). As of right now (September 2023) there is no official documentation from openai on how to accurately predict the number of tokens from functions. This package solves that! Use it to get a very precise estimation of the token count for chat completions and better manage your OpenAI API usage.
 
 Most often it is correct down to the token.
 

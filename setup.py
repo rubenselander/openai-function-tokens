@@ -4,14 +4,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="openai_function_tokens",
+    name="openai-function-tokens",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
-    description="A package to generate TypeScript function type definitions and estimate token counts.",
+    author="Reversehobo",
+    author_email="info@nordicintel.com",
+    description="A package to estimate token counts for messages AND functions in openai's chat completion API.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/openai_function_tokens",  # replace with your repo URL
+    url="https://github.com/Reversehobo/openai-function-tokens",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
