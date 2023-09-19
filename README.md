@@ -1,44 +1,40 @@
 
-# OpenAI Function Tokens
+# OpenAI Function Tokens Estimator
 
-Predict the exact OpenAI token usage for openai functions!
+Estimate OpenAI token usage for chat completions, including functions, with this Python utility!
 
-This repository offers a Python implementation of `hmarr`'s [openai-chat-tokens](https://github.com/hmarr/openai-chat-tokens). With this tool, you can estimate the token count for a given chat completion (including the functions), helping you to efficiently manage your OpenAI usage.
+This package is based upon `hmarr`'s [openai-chat-tokens](https://github.com/hmarr/openai-chat-tokens). As of right now (September 2023) there is no official documentation from openai on how to accurately count the token usage of functions before creating a chat completion. This package solves that! Use it to get a very precise estimation of the token count for chat completions and better manage your OpenAI API usage.
 
+Most often it is correct down to the token.
 
-## Quick Start
+## Installation
 
-
-1. **Download the Repository**
-   
-   [Download the file](#) and place it in your project directory.
-
-2. **Install Tiktoken**
+1. **Install the Package via pip**
 
    ```console
-   pip install Tiktoken
+   pip install openai_function_tokens
    ```
-   
-3. **Import the Function**
+
+2. **Import the Estimation Function**
 
    ```python
-   from openai_function_tokens import estimate_prompt_tokens
+   from openai_function_tokens import estimate_tokens
    ```
 
-4. **Use the Estimator**
+## Usage
 
-   Call the `estimate_prompt_tokens` function with the required parameters:
+To use the estimator, call the `estimate_tokens` function:
 
-   ```python
-   estimate_prompt_tokens(messages, functions=None, function_call=None)
-   ```
+```python
+estimate_tokens(messages, functions=None, function_call=None)
+```
 
-   Provide the `messages`, and optionally `functions` and `function_call`, to get a precise token prediction before initiating a chat completion.
+Pass in the `messages`, and optionally `functions` and `function_call`, to receive a precise token count estimation.
 
 ## Acknowledgments
 
-Credit for the original TypeScript implementation goes to [hmarr](https://github.com/hmarr). You can learn more about the logic behind token counting in his [blog post](https://hmarr.com/blog/counting-openai-tokens/).
+Credit to [hmarr](https://github.com/hmarr) for the original TypeScript tool. For a better understanding of token counting logic, check out his [blog post](https://hmarr.com/blog/counting-openai-tokens/).
 
-## Future Plans
+## Contributing
 
-If there's enough interest, a pip package version may be released in the future. Feedback and contributions are always welcome!
+Feedback, suggestions, and contributions are highly appreciated. Help make this tool even better!
