@@ -8,22 +8,29 @@ This repository offers a Python implementation of `hmarr`'s [openai-chat-tokens]
 
 ## Quick Start
 
+
 1. **Download the Repository**
    
    [Download the file](#) and place it in your project directory.
+
+2. **Install Tiktoken**
+
+   ```console
+   pip install Tiktoken
+   ```
    
-2. **Import the Function**
+3. **Import the Function**
 
    ```python
-   from openai_function_tokens import prompt_tokens_estimate
+   from openai_function_tokens import estimate_prompt_tokens
    ```
 
-3. **Use the Estimator**
+4. **Use the Estimator**
 
-   Call the `prompt_tokens_estimate` function with the required parameters:
+   Call the `estimate_prompt_tokens` function with the required parameters:
 
    ```python
-   prompt_tokens_estimate(messages, functions=None, function_call=None)
+   estimate_prompt_tokens(messages, functions=None, function_call=None)
    ```
 
    Provide the `messages`, and optionally `functions` and `function_call`, to get a precise token prediction before initiating a chat completion.
