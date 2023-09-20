@@ -1,7 +1,10 @@
 import tiktoken
 
 
-def format_function_definitions(functions: list[dict]) -> str:
+ENCODING = tiktoken.get_encoding("cl100k_base")
+
+
+def _format_function_definitions(functions: list[dict]) -> str:
     """
     Generates TypeScript function type definitions.
 
@@ -78,6 +81,12 @@ def _format_type(param: dict, indent: int) -> str:
             if param.get("enum")
             else "number"
         )
+    elif type_ == "integer":
+        return (
+            " | ".join([str(v) for v in param["enum"]])
+            if param.get("enum")
+            else "integer"
+        )
     elif type_ == "array":
         return (
             f"{_format_type(param['items'], indent)}[]"
@@ -104,29 +113,24 @@ def _estimate_function_tokens(functions: list[dict]) -> int:
     Returns:
     - int: Estimated token count.
     """
-    prompt_definitions = format_function_definitions(functions)
-    tokens = _estimate_string_tokens(prompt_definitions)
+    prompt_definitions = _format_function_definitions(functions)
+    tokens = _string_tokens(prompt_definitions)
     tokens += 9  # Add nine per completion
     return tokens
 
 
-def _estimate_string_tokens(string: str, model: str = "gpt-3.5-turbo-0613") -> int:
+def _string_tokens(string: str) -> int:
     """
-    Estimates token count for a given string based on a specified model.
+    Estimates token count for a given string using 'cl100k_base' encoding.
 
     Args:
     - string (str): Input string.
-    - model (str, optional): Model name. Default is "gpt-3.5-turbo-0613".
 
     Returns:
     - int: Estimated token count.
     """
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-    except KeyError:
-        print("Warning: model not found. Using cl100k_base encoding.")
-        encoding = tiktoken.get_encoding("cl100k_base")
-    return len(encoding.encode(string))
+    global ENCODING
+    return len(ENCODING.encode(string))
 
 
 def _estimate_message_tokens(message: dict) -> int:
@@ -149,7 +153,7 @@ def _estimate_message_tokens(message: dict) -> int:
     components = [
         component for component in components if component
     ]  # Filter out None values
-    tokens = sum([_estimate_string_tokens(component) for component in components])
+    tokens = sum([_string_tokens(component) for component in components])
 
     tokens += 3  # Add three per message
     if message.get("name"):
@@ -196,9 +200,7 @@ def estimate_tokens(
 
     if function_call and function_call != "auto":
         tokens += (
-            1
-            if function_call == "none"
-            else _estimate_string_tokens(function_call["name"]) + 4
+            1 if function_call == "none" else _string_tokens(function_call["name"]) + 4
         )
 
     return tokens
