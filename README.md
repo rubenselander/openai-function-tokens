@@ -12,7 +12,7 @@ Most often it is correct down to the token.
 1. **Install the Package via pip**
 
    ```console
-   pip install openai_function_tokens
+   pip install openai-function-tokens
    ```
 
 2. **Import the Estimation Function**
