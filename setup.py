@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="openai-function-tokens",
-    version="0.1.1",
+    version="0.1.2",
     author="Reversehobo",
     author_email="info@nordicintel.com",
     description="A package to estimate token counts for messages AND functions in openai's chat completion API.",

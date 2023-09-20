@@ -45,7 +45,7 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
-.ipynb
+testing.ipynb
 
 # VS Code
 .vscode/
